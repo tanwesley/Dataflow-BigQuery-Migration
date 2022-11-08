@@ -48,10 +48,15 @@ class Printer(beam.DoFn):
 
 def old_to_new_schema(data: dict, config: list): 
     for d in config:
-        if d.get('Type') == 'new': 
-            data.update({ d.get('Field'): d.get('Default') })
-        elif d.get('Type') == 'delete':
-            data.pop(d.get('Field'))
+        match d.get('Type'):
+            case 'new' | 'modify':
+                data.update({ d.get('Field'): d.get('Default') })
+            case 'delete':
+                data.pop(d.get('Field'))
+        # if d.get('Type') == 'new': 
+        #     data.update({ d.get('Field'): d.get('Default') })
+        # elif d.get('Type') == 'delete':
+        #     data.pop(d.get('Field'))
     logger.info(f'LOGGER: {type(data)}')
     return [data]
 
