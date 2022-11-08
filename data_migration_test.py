@@ -48,15 +48,10 @@ class Printer(beam.DoFn):
 
 def old_to_new_schema(data: dict, config: list): 
     for d in config:
-        match d.get('Type'):
-            case 'new' | 'modify':
-                data.update({ d.get('Field'): d.get('Default') })
-            case 'delete':
-                data.pop(d.get('Field'))
-        # if d.get('Type') == 'new': 
-        #     data.update({ d.get('Field'): d.get('Default') })
-        # elif d.get('Type') == 'delete':
-        #     data.pop(d.get('Field'))
+        if d.get('Type') == 'new': 
+            data.update({ d.get('Field'): d.get('Default') })
+        elif d.get('Type') == 'delete':
+            data.pop(d.get('Field'))
     logger.info(f'LOGGER: {type(data)}')
     return [data]
 
@@ -97,6 +92,5 @@ if __name__ == '__main__':
 # python data_migration_test.py --project=cloudbuild-test-367215 \
 # --output cloudbuild-test-367215:test_dataset.new_test_table \
 # --temp_location=gs://bq-data-migration-store/temp/ \
-# --runner DataflowRunner
 # --project=cloudbuild-test-367215
 # --region=us-central1
