@@ -7,6 +7,8 @@ from apache_beam.options.pipeline_options import SetupOptions
 import json
 import gcsfs
 import logging
+logging.basicConfig(level = logging.INFO)
+
 
 # PIPELINE OUTLINE
 # Read bq-migrate-config.json from bucket gs://bq-data-migration-store
@@ -21,7 +23,8 @@ OUTPUT_TABLE = 'new_test_table'
 
 GCS_FILE_SYSTEM = gcsfs.GCSFileSystem(project=PROJECT_NAME)
 # GCS_CONFIG_PATH = 'gs://bq-data-migration-store/bq-migrate-config.json'
-GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config.json'
+# GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config.json'
+GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_2.json'
 
 GCS_NEW_SCHEMA_PATH = 'gs://bq-data-migration-store/new_bqschema.json'
 
@@ -45,17 +48,48 @@ class Printer(beam.DoFn):
 #         # Modify fields to match new schema 
 #         return [data]
 
+
+# TO DO: Add conversion for nested columns.
 def old_to_new_schema(data: dict, config: list): 
     for d in config:
         change_type = d.get('Type')
         field_name = d.get('Field')
         default_val = d.get('Default')
-        
-        if change_type == 'new' or change_type == 'modify': 
-            data.update({ field_name: default_val })
-        elif change_type == 'delete':
-            data.pop(field_name)
-    logger.info(f'LOGGER: {type(data)}')
+
+        # TO DO: Make this more scalable and clean
+        if '.' in field_name:
+            super_field, sub_field = field_name.split('.')
+            logger.info(f'super_field={super_field}, sub_field={sub_field}')
+
+            nested_obj = data.get(super_field)[0]
+            logger.info(f'Nested Object: {nested_obj}')
+
+            if change_type == 'new':
+                nested_obj.update({ sub_field: default_val })
+                logger.info(f'Updated nested obj: {nested_obj}')
+                data.update({ super_field: [nested_obj] })
+            elif change_type == 'modify': 
+                nested_obj.update({ sub_field: default_val })
+                logger.info(f'Updated nested obj: {nested_obj}')
+                data.update({ super_field: [nested_obj] })
+
+            # elif change_type == 'delete':
+        else: 
+            if change_type == 'new':
+                if data.get(field_name) != None: 
+                    raise Exception('Field already exists in old table!')
+                data.update({ field_name: default_val })
+            elif change_type == 'modify': 
+                if data.get(field_name) == None: 
+                    raise Exception('Field does not exist in the old table!')
+            elif change_type == 'delete':
+                if data.get(field_name) == None: 
+                    raise Exception('Field does not exist in the old table!')
+                data.pop(field_name)
+
+        logger.info(f'\n\nModification: {change_type}, Field: {field_name}')
+
+    logger.info(f'\nConverted Data: {data} \nType: {type(data)}\n\n')
     return [data]
 
 
