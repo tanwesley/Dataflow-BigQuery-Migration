@@ -5,7 +5,6 @@ from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions 
 import json
-import datetime
 import gcsfs
 import logging
 
@@ -22,7 +21,7 @@ OUTPUT_TABLE = 'new_test_table'
 
 GCS_FILE_SYSTEM = gcsfs.GCSFileSystem(project=PROJECT_NAME)
 # GCS_CONFIG_PATH = 'gs://bq-data-migration-store/bq-migrate-config.json'
-GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_nd.json'
+GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config.json'
 
 GCS_NEW_SCHEMA_PATH = 'gs://bq-data-migration-store/new_bqschema.json'
 
@@ -48,10 +47,14 @@ class Printer(beam.DoFn):
 
 def old_to_new_schema(data: dict, config: list): 
     for d in config:
-        if d.get('Type') == 'new': 
-            data.update({ d.get('Field'): d.get('Default') })
-        elif d.get('Type') == 'delete':
-            data.pop(d.get('Field'))
+        change_type = d.get('Type')
+        field_name = d.get('Field')
+        default_val = d.get('Default')
+        
+        if change_type == 'new' or change_type == 'modify': 
+            data.update({ field_name: default_val })
+        elif change_type == 'delete':
+            data.pop(field_name)
     logger.info(f'LOGGER: {type(data)}')
     return [data]
 
