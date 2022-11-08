@@ -8,5 +8,10 @@
         "Default": "1",
         "Field": "version",
         "Type": "new"
-    }    
+    },
+    {
+        "Default": true,
+        "Field": "hasComments",
+        "Type": "delete"
+    }
 ]

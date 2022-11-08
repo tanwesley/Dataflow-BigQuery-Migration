@@ -1,6 +1,6 @@
 [
     {
-        "Default": "null",
+        "Default": null,
         "Field": "blindReview",
         "Type": "new"
     },
@@ -10,7 +10,7 @@
         "Type": "new"
     },
     {
-        "Default": "null",
+        "Default": null,
         "Field": "hasComments",
         "Type": "delete"
     }
