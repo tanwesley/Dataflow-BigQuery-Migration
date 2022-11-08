@@ -13,5 +13,10 @@
         "Default": true,
         "Field": "hasComments",
         "Type": "delete"
+    },
+    {
+        "Default": "UPDATEDCODE",
+        "Field": "Codes.code",
+        "Type": "modify"
     }
 ]
