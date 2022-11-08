@@ -1,0 +1,12 @@
+[
+    {
+        "Default": true,
+        "Field": "blindReview",
+        "Type": "new"
+    },
+    {
+        "Default": "1",
+        "Field": "version",
+        "Type": "new"
+    }    
+]

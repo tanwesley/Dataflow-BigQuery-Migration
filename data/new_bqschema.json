@@ -1,0 +1,50 @@
+[
+    {
+        "mode": "NULLABLE",
+        "name": "ts",
+        "type": "TIMESTAMP"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "hasComments",
+        "type": "BOOLEAN"
+    },
+    {
+        "mode": "REQUIRED",
+        "name": "guid",
+        "type": "STRING"
+    },
+    {
+        "fields":
+        [
+            {
+                "mode": "NULLABLE",
+                "name": "badSignature",
+                "type": "BOOLEAN"
+            },
+            {
+                "mode": "NULLABLE",
+                "name": "code",
+                "type": "STRING"
+            },
+            {
+                "mode": "NULLABLE",
+                "name": "createdAt",
+                "type": "TIMESTAMP"
+            }       
+        ],
+        "mode": "REPEATED",
+        "name": "Codes",
+        "type": "RECORD"
+    },
+    {
+	"name": "blindReview",
+	"type": "BOOLEAN",
+	"mode": "NULLABLE"
+    },
+    {
+	"name": "version",
+	"type": "STRING",
+	"mode": "REQUIRED"
+    }
+]
