@@ -1,11 +1,10 @@
 import argparse
 import apache_beam as beam 
-from apache_beam.io import ReadFromText
-from apache_beam.io import WriteToText
+# from apache_beam.io import ReadFromText
+# from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions 
 import json
-import datetime
 import gcsfs
 import logging
 
@@ -48,10 +47,17 @@ class Printer(beam.DoFn):
 
 def old_to_new_schema(data: dict, config: list): 
     for d in config:
-        if d.get('Type') == 'new': 
-            data.update({ d.get('Field'): d.get('Default') })
-        elif d.get('Type') == 'delete':
-            data.pop(d.get('Field'))
+        match d.get('Type'):
+            case 'new' | 'modify':
+                data.update({ d.get('Field'): d.get('Default') })
+            case 'delete': 
+                data.pop({ d.get('Field') })
+
+        # if d.get('Type') == 'new': 
+        #     data.update({ d.get('Field'): d.get('Default') })
+        # elif d.get('Type') == 'delete':
+        #     data.pop(d.get('Field'))
+        # elif d.get('Type') 
     logger.info(f'LOGGER: {type(data)}')
     return [data]
 
