@@ -50,7 +50,7 @@ def old_to_new_schema(data: dict, config: list):
         change_type = d.get('Type')
         field_name = d.get('Field')
         default_val = d.get('Default')
-        if change_type == 'new' | change_type == 'modify': 
+        if change_type == 'new' or change_type == 'modify': 
             data.update({ field_name: default_val })
         elif change_type == 'delete':
             data.pop(field_name)
