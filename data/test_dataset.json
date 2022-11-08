@@ -1,0 +1,5 @@
+[
+{"ts": "2021-05-15 16:45:23", "hasComments": true, "guid": "0", "Codes": [{"badSignature": false, "code": "12345", "createdAt": "2021-05-15 16:45:23"}]},
+{"ts": "2021-05-16 16:45:23", "hasComments": false, "guid": "1", "Codes": [{"badSignature": false, "code": "14352", "createdAt": "2021-05-16 16:45:23"}]},
+{"ts": "2021-05-17 16:48:32", "hasComments": false, "guid": "2", "Codes": [{"badSignature": true, "code": "asdf3", "createdAt": "2021-05-17 16:48:32"}]}
+]
