@@ -5,11 +5,6 @@
         "type": "TIMESTAMP"
     },
     {
-        "mode": "NULLABLE",
-        "name": "hasComments",
-        "type": "BOOLEAN"
-    },
-    {
         "mode": "REQUIRED",
         "name": "guid",
         "type": "STRING"

@@ -1,0 +1,48 @@
+[
+    {
+        "mode": "NULLABLE",
+        "name": "blindReview",
+        "type": "BOOLEAN",
+        "mutation_type": "add",
+        "default_value": true
+    },
+    {
+        "mode": "REQUIRED",
+        "name": "version",
+        "type": "STRING",
+        "mutation_type": "add",
+        "default_value": "1"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "hasComments",
+        "type": "BOOLEAN",
+        "mutation_type": "delete"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "Codes",
+        "fields": [
+            {
+                "mode": "NULLABLE",
+                "name": "code",
+                "type": "STRING",
+                "mutation_type": "modify",
+                "set_value": "UPDATEDCODE"
+            },
+            {
+                "mode": "NULLABLE",
+                "name": "badSignature",
+                "type": "BOOLEAN",
+                "mutation_type": "delete"
+            },
+            {
+                "mode": "NULLABLE",
+                "name": "newNestedField",
+                "type": "STRING",
+                "mutation_type": "add",
+                "default_value": "This is a new nested field!"
+            }
+        ]
+    }
+]
