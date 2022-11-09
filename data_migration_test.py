@@ -6,8 +6,8 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions 
 import json
 import gcsfs
-import logging
-logging.basicConfig(level = logging.INFO)
+# import logging
+# logging.basicConfig(level = logging.INFO)
 
 
 # PIPELINE OUTLINE
@@ -26,10 +26,9 @@ GCS_FILE_SYSTEM = gcsfs.GCSFileSystem(project=PROJECT_NAME)
 # GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config.json'
 GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_2.json'
 
+update_config = json.load(GCS_FILE_SYSTEM.open(GCS_CONFIG_PATH))
+
 GCS_NEW_SCHEMA_PATH = 'gs://bq-data-migration-store/new_bqschema.json'
-
-
-logger = logging.getLogger(__name__)
 
 class Printer(beam.DoFn):
     def process(self, element):
@@ -50,7 +49,13 @@ class Printer(beam.DoFn):
 
 
 # TO DO: Add conversion for nested columns.
-def old_to_new_schema(data: dict, config: list): 
+# TO DO: job works on DirectRunner but fails on DataflowRunner. old_to_new_schema function appears to not be defined when
+#        running pipeline.
+def old_to_new_schema(data: dict, config: list = update_config): 
+    import logging
+    logging.basicConfig(level = logging.INFO)
+    logger = logging.getLogger(__name__)
+
     for d in config:
         change_type = d.get('Type')
         field_name = d.get('Field')
@@ -72,8 +77,11 @@ def old_to_new_schema(data: dict, config: list):
                 nested_obj.update({ sub_field: default_val })
                 logger.info(f'Updated nested obj: {nested_obj}')
                 data.update({ super_field: [nested_obj] })
-
-            # elif change_type == 'delete':
+            elif change_type == 'delete':
+                nested_obj.pop(sub_field)
+                logger.info(f'Updated nested obj: {nested_obj}')
+                data.update({ super_field: [nested_obj] })
+                
         else: 
             if change_type == 'new':
                 if data.get(field_name) != None: 
@@ -104,7 +112,6 @@ def run(argv=None):
                         default=f'{PROJECT_NAME}:{OUTPUT_DATASET}.{OUTPUT_TABLE}',
                         help='Output file to write results to.')
 
-    update_config = json.load(GCS_FILE_SYSTEM.open(GCS_CONFIG_PATH))
 
     known_args, pipeline_args = parser.parse_known_args(argv)
     pipeline_options = PipelineOptions(pipeline_args)
@@ -115,7 +122,9 @@ def run(argv=None):
     main = (p
         | 'Read old table' >> (beam.io.ReadFromBigQuery(gcs_location='gs://bq-data-migration-store/test-table',
                                                         table='cloudbuild-test-367215:test_dataset.test-table'))
-        | 'Convert to new schema' >> beam.ParDo(lambda d: old_to_new_schema(d,update_config))
+        # | 'Convert to new schema' >> beam.ParDo(lambda d: old_to_new_schema(d))
+        # Using lambda expression causes job to fail, throwing an error saying old_to_new_schema is not defined.
+        | 'Convert to new schema' >> beam.ParDo(old_to_new_schema) 
         | 'Write to BigQuery' >> (beam.io.WriteToBigQuery(table=known_args.output, custom_gcs_temp_location='gs://bq-data-migration-store/temp'))
     )
 
@@ -129,5 +138,5 @@ if __name__ == '__main__':
 # python data_migration_test.py --project=cloudbuild-test-367215 \
 # --output cloudbuild-test-367215:test_dataset.new_test_table \
 # --temp_location=gs://bq-data-migration-store/temp/ \
-# --project=cloudbuild-test-367215
+# --project=cloudbuild-test-367215 \
 # --region=us-central1
