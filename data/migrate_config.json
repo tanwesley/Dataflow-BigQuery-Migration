@@ -13,5 +13,9 @@
         "Default": true,
         "Field": "hasComments",
         "Type": "delete"
+    },
+    {
+        "Default": "This is a new nested field",
+        "Field": "Codes.newNestedField"
     }
 ]

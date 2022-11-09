@@ -19,11 +19,6 @@
         [
             {
                 "mode": "NULLABLE",
-                "name": "badSignature",
-                "type": "BOOLEAN"
-            },
-            {
-                "mode": "NULLABLE",
                 "name": "code",
                 "type": "STRING"
             },
@@ -31,7 +26,12 @@
                 "mode": "NULLABLE",
                 "name": "createdAt",
                 "type": "TIMESTAMP"
-            }       
+            },
+            {
+                "mode": "NULLABLE",
+                "name": "newNestedField",
+                "type": "STRING"
+            }
         ],
         "mode": "REPEATED",
         "name": "Codes",

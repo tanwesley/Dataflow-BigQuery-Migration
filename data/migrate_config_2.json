@@ -18,5 +18,10 @@
         "Default": "UPDATEDCODE",
         "Field": "Codes.code",
         "Type": "modify"
+    },
+    {
+        "Default": null,
+        "Field": "Codes.badSignature",
+        "Type": "new"
     }
 ]
