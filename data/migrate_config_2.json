@@ -22,6 +22,11 @@
     {
         "Default": null,
         "Field": "Codes.badSignature",
+        "Type": "delete"
+    },
+    {
+        "Default": "This is a new nested field",
+        "Field": "Codes.newNestedField",
         "Type": "new"
     }
 ]
