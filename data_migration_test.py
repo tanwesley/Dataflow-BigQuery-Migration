@@ -6,15 +6,7 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions 
 import json
 import gcsfs
-# import logging
-# logging.basicConfig(level = logging.INFO)
 
-
-# PIPELINE OUTLINE
-# Read bq-migrate-config.json from bucket gs://bq-data-migration-store
-# Read cloudbuild-test-367215.test_dataset.test-table from BigQuery to migrate
-# Read new_bqschema.json as schema for inserting data into cloudbuild-test-367215.test_dataset.new_test_table
-# If field is found in old table and type is 'new', insert old data into new table
 
 BUCKET_NAME = 'bq-data-migration-store'
 PROJECT_NAME = 'cloudbuild-test-367215'
@@ -53,8 +45,8 @@ class Printer(beam.DoFn):
 #        running pipeline.
 def old_to_new_schema(data: dict, config: list = update_config): 
     import logging
-    logging.basicConfig(level = logging.INFO)
     logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
 
     for d in config:
         change_type = d.get('Type')
@@ -64,22 +56,22 @@ def old_to_new_schema(data: dict, config: list = update_config):
         # TO DO: Make this more scalable and clean
         if '.' in field_name:
             super_field, sub_field = field_name.split('.')
-            logger.info(f'super_field={super_field}, sub_field={sub_field}')
+            logger.info(f' super_field={super_field}, sub_field={sub_field}')
 
             nested_obj = data.get(super_field)[0]
-            logger.info(f'Nested Object: {nested_obj}')
+            logger.info(f' Nested Object: {nested_obj}')
 
             if change_type == 'new':
                 nested_obj.update({ sub_field: default_val })
-                logger.info(f'Updated nested obj: {nested_obj}')
+                logger.info(f' Updated nested obj: {nested_obj}')
                 data.update({ super_field: [nested_obj] })
             elif change_type == 'modify': 
                 nested_obj.update({ sub_field: default_val })
-                logger.info(f'Updated nested obj: {nested_obj}')
+                logger.info(f' Updated nested obj: {nested_obj}')
                 data.update({ super_field: [nested_obj] })
             elif change_type == 'delete':
                 nested_obj.pop(sub_field)
-                logger.info(f'Updated nested obj: {nested_obj}')
+                logger.info(f' Updated nested obj: {nested_obj}')
                 data.update({ super_field: [nested_obj] })
                 
         else: 
@@ -95,7 +87,7 @@ def old_to_new_schema(data: dict, config: list = update_config):
                     raise Exception('Field does not exist in the old table!')
                 data.pop(field_name)
 
-        logger.info(f'\n\nModification: {change_type}, Field: {field_name}')
+        logger.info(f'\nModification: {change_type}, Field: {field_name}\n\n')
 
     logger.info(f'\nConverted Data: {data} \nType: {type(data)}\n\n')
     return [data]
