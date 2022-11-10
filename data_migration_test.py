@@ -16,7 +16,8 @@ OUTPUT_TABLE = 'new_test_table'
 GCS_FILE_SYSTEM = gcsfs.GCSFileSystem(project=PROJECT_NAME)
 # GCS_CONFIG_PATH = 'gs://bq-data-migration-store/bq-migrate-config.json'
 # GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config.json'
-GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_2.json'
+# GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_2.json'
+GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_v2.json'
 
 update_config = json.load(GCS_FILE_SYSTEM.open(GCS_CONFIG_PATH))
 
@@ -48,49 +49,75 @@ def old_to_new_schema(data: dict, config: list = update_config):
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
-    for d in config:
-        change_type = d.get('Type')
-        field_name = d.get('Field')
-        default_val = d.get('Default')
+    for d in config: 
+        name = d.get('name')
 
-        # TO DO: Make this more scalable and clean
-        if '.' in field_name:
-            super_field, sub_field = field_name.split('.')
-            logger.info(f' super_field={super_field}, sub_field={sub_field}')
+        if d.get('mode') == 'REPEATED':             
+            logger.info(f"DATA: {data}")
+            logger.info(f"NESTED FIELDS: {data.get(name)}")
+            nested_fields = data.get(name) 
 
-            nested_obj = data.get(super_field)[0]
-            logger.info(f' Nested Object: {nested_obj}')
+            for f in nested_fields: 
+                data.update({ name: old_to_new_schema(f, d.get('fields')) })
+                logger.info(f"UPDATED DATA: {data}\n")
 
-            if change_type == 'new':
-                nested_obj.update({ sub_field: default_val })
-                logger.info(f' Updated nested obj: {nested_obj}')
-                data.update({ super_field: [nested_obj] })
-            elif change_type == 'modify': 
-                nested_obj.update({ sub_field: default_val })
-                logger.info(f' Updated nested obj: {nested_obj}')
-                data.update({ super_field: [nested_obj] })
-            elif change_type == 'delete':
-                nested_obj.pop(sub_field)
-                logger.info(f' Updated nested obj: {nested_obj}')
-                data.update({ super_field: [nested_obj] })
-                
-        else: 
-            if change_type == 'new':
-                if data.get(field_name) != None: 
-                    raise Exception('Field already exists in old table!')
-                data.update({ field_name: default_val })
-            elif change_type == 'modify': 
-                if data.get(field_name) == None: 
-                    raise Exception('Field does not exist in the old table!')
-            elif change_type == 'delete':
-                if data.get(field_name) == None: 
-                    raise Exception('Field does not exist in the old table!')
-                data.pop(field_name)
+        else:
+            mutation_type = d.get('mutation_type') 
 
-        logger.info(f'\nModification: {change_type}, Field: {field_name}\n\n')
+            if mutation_type == 'new': 
+                value = d.get('default_value')
+                data.update({ name: value })
+            elif mutation_type == 'modify':
+                value = d.get('set_value')
+                data.update({ name: value })
+            elif mutation_type == 'delete':
+                data.pop(name)
 
-    logger.info(f'\nConverted Data: {data} \nType: {type(data)}\n\n')
     return [data]
+
+    # for d in config:
+    #     change_type = d.get('Type')
+    #     field_name = d.get('Field')
+    #     default_val = d.get('Default')
+
+    #     # TO DO: Make this more scalable and clean
+    #     if '.' in field_name:
+    #         super_field, sub_field = field_name.split('.')
+    #         logger.info(f' super_field={super_field}, sub_field={sub_field}')
+
+    #         nested_obj = data.get(super_field)[0]
+    #         logger.info(f' Nested Object: {nested_obj}')
+
+    #         if change_type == 'new':
+    #             nested_obj.update({ sub_field: default_val })
+    #             logger.info(f' Updated nested obj: {nested_obj}')
+    #             data.update({ super_field: [nested_obj] })
+    #         elif change_type == 'modify': 
+    #             nested_obj.update({ sub_field: default_val })
+    #             logger.info(f' Updated nested obj: {nested_obj}')
+    #             data.update({ super_field: [nested_obj] })
+    #         elif change_type == 'delete':
+    #             nested_obj.pop(sub_field)
+    #             logger.info(f' Updated nested obj: {nested_obj}')
+    #             data.update({ super_field: [nested_obj] })
+                
+    #     else: 
+    #         if change_type == 'new':
+    #             if data.get(field_name) != None: 
+    #                 raise Exception('Field already exists in old table!')
+    #             data.update({ field_name: default_val })
+    #         elif change_type == 'modify': 
+    #             if data.get(field_name) == None: 
+    #                 raise Exception('Field does not exist in the old table!')
+    #         elif change_type == 'delete':
+    #             if data.get(field_name) == None: 
+    #                 raise Exception('Field does not exist in the old table!')
+    #             data.pop(field_name)
+
+    #     logger.info(f'\nModification: {change_type}, Field: {field_name}\n\n')
+
+    # logger.info(f'\nConverted Data: {data} \nType: {type(data)}\n\n')
+    # return [data]
 
 
         
