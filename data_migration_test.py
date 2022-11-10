@@ -22,6 +22,7 @@ GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_v2.json'
 update_config = json.load(GCS_FILE_SYSTEM.open(GCS_CONFIG_PATH))
 
 GCS_NEW_SCHEMA_PATH = 'gs://bq-data-migration-store/new_bqschema.json'
+# new_schema = json.load(GCS_FILE_SYSTEM.open(GCS_NEW_SCHEMA_PATH))
 
 class Printer(beam.DoFn):
     def process(self, element):
@@ -59,12 +60,12 @@ def old_to_new_schema(data: dict, config: list = update_config):
 
             for f in nested_fields: 
                 data.update({ name: old_to_new_schema(f, d.get('fields')) })
-                logger.info(f"UPDATED DATA: {data}\n")
+                logger.info(f"UPDATED DATA: {data}")
 
         else:
             mutation_type = d.get('mutation_type') 
 
-            if mutation_type == 'new': 
+            if mutation_type == 'add': 
                 value = d.get('default_value')
                 data.update({ name: value })
             elif mutation_type == 'modify':
@@ -73,6 +74,7 @@ def old_to_new_schema(data: dict, config: list = update_config):
             elif mutation_type == 'delete':
                 data.pop(name)
 
+    logger.info(f"FINAL UPDATED DATA: {data}\n")
     return [data]
 
     # for d in config:
@@ -141,10 +143,10 @@ def run(argv=None):
     main = (p
         | 'Read old table' >> (beam.io.ReadFromBigQuery(gcs_location='gs://bq-data-migration-store/test-table',
                                                         table='cloudbuild-test-367215:test_dataset.test-table'))
-        # | 'Convert to new schema' >> beam.ParDo(lambda d: old_to_new_schema(d))
-        # Using lambda expression causes job to fail, throwing an error saying old_to_new_schema is not defined.
         | 'Convert to new schema' >> beam.ParDo(old_to_new_schema) 
-        | 'Write to BigQuery' >> (beam.io.WriteToBigQuery(table=known_args.output, custom_gcs_temp_location='gs://bq-data-migration-store/temp'))
+        | 'Write to BigQuery' >> (beam.io.WriteToBigQuery(table=known_args.output, 
+                                                          custom_gcs_temp_location='gs://bq-data-migration-store/temp')
+        )
     )
 
     result = p.run()
