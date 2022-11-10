@@ -15,7 +15,7 @@
             {
                 "mode": "NULLABLE",
                 "name": "code",
-                "type": "STRING"
+                "type": "INTEGER"
             },
             {
                 "mode": "NULLABLE",
