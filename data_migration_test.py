@@ -7,7 +7,6 @@ from apache_beam.options.pipeline_options import SetupOptions
 import json
 import gcsfs
 
-
 BUCKET_NAME = 'bq-data-migration-store'
 PROJECT_NAME = 'cloudbuild-test-367215'
 OUTPUT_DATASET = 'test_dataset'
@@ -24,60 +23,64 @@ update_config = json.load(GCS_FILE_SYSTEM.open(GCS_CONFIG_PATH))
 GCS_NEW_SCHEMA_PATH = 'gs://bq-data-migration-store/new_bqschema.json'
 # new_schema = json.load(GCS_FILE_SYSTEM.open(GCS_NEW_SCHEMA_PATH))
 
-def data_conversion(data, old_type, new_type):
-    if new_type == 'STRING': 
-        converted = str(data)
-    elif new_type == 'BOOLEAN':
-        if data == 'true' | data == 'True':
-            converted = True
-        elif data == 'false' | data == 'False':
-            converted = False
-        else: 
-            converted = None
-    elif new_type == 'INTEGER':
-        try:
-            converted = int(data)
-        except: 
-            converted = None 
-    elif new_type == 'FLOAT': 
-        try: 
-            converted = float(data)
-        except:
-            converted = None 
+class OldToNewSchema(beam.DoFn):
+    def __init__(self, config=update_config):
+        self.config = config
 
-    return converted
+    def process(self, data, config=update_config):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        
+        for c in config: 
+            name = c.get('name')
 
-def old_to_new_schema(data: dict, config: list = update_config): 
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+            if c.get('mode') == 'REPEATED':             
+                logger.info(f"DATA: {data}")
+                logger.info(f"NESTED FIELDS: {data.get(name)}")
+                nested_fields = data.get(name) 
 
-    for c in config: 
-        name = c.get('name')
+                for f in nested_fields: 
+                    data.update({ name: self.process(f, c.get('fields')) })
+                    logger.info(f"UPDATED DATA: {data}")
 
-        if c.get('mode') == 'REPEATED':             
-            logger.info(f"DATA: {data}")
-            logger.info(f"NESTED FIELDS: {data.get(name)}")
-            nested_fields = data.get(name) 
+            else:
+                mutation_type = c.get('mutation_type') 
 
-            for f in nested_fields: 
-                data.update({ name: old_to_new_schema(f, c.get('fields')) })
-                logger.info(f"UPDATED DATA: {data}")
+                if mutation_type == 'add': 
+                    value = c.get('default_value')
+                    data.update({ name: value })
+                elif mutation_type == 'modify':
+                    value = self.data_conversion(data.get(name), data.get('type'), c.get('type'))
+                    data.update({ name: value })
+                elif mutation_type == 'delete':
+                    data.pop(name)
 
-        else:
-            mutation_type = c.get('mutation_type') 
+        logger.info(f"FINAL UPDATED DATA: {data}\n")
+        return [data]
 
-            if mutation_type == 'add': 
-                value = c.get('default_value')
-                data.update({ name: value })
-            elif mutation_type == 'modify':
-                value = data_conversion(data.get(name), data.get('type'), c.get('type'))
-                data.update({ name: value })
-            elif mutation_type == 'delete':
-                data.pop(name)
+    def data_conversion(self, data, old_type, new_type):
+        if new_type == 'STRING': 
+            converted = str(data)
+        elif new_type == 'BOOLEAN':
+            if data == 'true' | data == 'True':
+                converted = True
+            elif data == 'false' | data == 'False':
+                converted = False
+            else: 
+                converted = None
+        elif new_type == 'INTEGER':
+            try:
+                converted = int(data)
+            except: 
+                converted = None 
+        elif new_type == 'FLOAT': 
+            try: 
+                converted = float(data)
+            except:
+                converted = None 
 
-    logger.info(f"FINAL UPDATED DATA: {data}\n")
-    return [data]
+        return converted
 
 
 def run(argv=None):
@@ -100,7 +103,7 @@ def run(argv=None):
     main = (p
         | 'Read old table' >> (beam.io.ReadFromBigQuery(gcs_location='gs://bq-data-migration-store/test-table',
                                                         table='cloudbuild-test-367215:test_dataset.test-table'))
-        | 'Convert to new schema' >> beam.ParDo(old_to_new_schema) 
+        | 'Convert to new schema' >> beam.ParDo(OldToNewSchema()) 
         | 'Write to BigQuery' >> (beam.io.WriteToBigQuery(table=known_args.output, 
                                                           custom_gcs_temp_location='gs://bq-data-migration-store/temp')
         )
