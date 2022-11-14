@@ -84,3 +84,11 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
 ]
 ```
 Create a BigQuery table with the new schema JSON specification and store the update configuration JSON in a GCS bucket.
+
+## Running Apache Beam job on Dataflow
+To submit a job, the following arguments are required to run:
+- **--input:** The source BigQuery table from which you wish to migrate data from. Format: PROJECT:DATASET.TABLE 
+- **--output:"** The new BigQuery table which you wish to output transformed data to. Format: PROJECT:DATASET.TABLE
+- **--migrate_config:** The GCS path to the migration config JSON file which applies data to new schema.
+- **--project:** The Google Cloud project in which you are working.
+- **--temp_location:** A path to a GCS bucket to temporarily store data which will be written to BigQuery. 
