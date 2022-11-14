@@ -91,7 +91,7 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
 Create a BigQuery table with the new schema JSON specification and store the update configuration JSON in a GCS bucket.
 
 ## Running Apache Beam job on Dataflow
-To submit a job, open the repository in command line and configure the arguments which are required to run.
+To submit a job, open the repository in the Google Cloud command line interface and configure the arguments which are required to run.
 
 ```
 EXPORT PROJECT="The Google Cloud project ID where you are working from" \
