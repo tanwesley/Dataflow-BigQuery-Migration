@@ -1,6 +1,9 @@
 # Dataflow BigQuery Migration
 A simple Apache Beam pipeline to migrate data from a BigQuery table to a new schema specified by a configuration JSON to be run on Google Cloud Dataflow.
 
+## Requirements:
+-
+
 ## Setting up Configuration Files
 Configurations are based on BigQuery schema structure and datatypes using JSON. [See official BigQuery documentation](https://cloud.google.com/bigquery/docs/schemas#specifying_a_json_schema_file)
 
@@ -97,7 +100,7 @@ EXPORT TEMP_LOCATION="The path to a GCS location where data will be temporarily 
 EXPORT REGION="Any available Google Cloud Platform service region of your choice"
 ```
 
-Then run the Python file to submit a job to Dataflow.
+Then run the Python file to submit a job to Dataflow. To run locally instead of on Dataflow, simply remove the --runner and --region arguments.
 ```
 python data_migration_test.py --project=PROJECT \
 --input=INPUT \
