@@ -72,6 +72,10 @@ def run(argv=None):
 
     parser = argparse.ArgumentParser()
 
+    
+    # Arguments to execute Python script with.
+    # Required arguments: 
+    # --input, --migrate_config, --output, --project, --temp_location
     parser.add_argument('--input',
                         dest='input',
                         required=True,
@@ -90,11 +94,14 @@ def run(argv=None):
     pipeline_options.view_as(SetupOptions).save_main_session = True
     pipeline_options_dict = pipeline_options.get_all_options()
 
+    # Get values from pipeline_options arguments
     project_name = pipeline_options_dict.get('project')
     temp_location = pipeline_options_dict.get('temp_location')
     if temp_location == None: 
         raise Exception('Missing required flag: --temp_location. --temp_location should be a path to a GCS location to write data to BigQuery.')
 
+    # API to access Google Cloud Storage file system. 
+    # Read JSON configuration file from GCS and load as Dictionary
     fs = gcsfs.GCSFileSystem(project=project_name)
     update_config = json.load(fs.open(known_args.migrate_config))
 
@@ -104,8 +111,7 @@ def run(argv=None):
         | 'Read old table' >> (beam.io.ReadFromBigQuery(table=known_args.input, gcs_location=temp_location))
         | 'Convert to new schema' >> beam.ParDo(OldToNewSchema(update_config)) 
         | 'Write to BigQuery' >> (beam.io.WriteToBigQuery(table=known_args.output, 
-                                                          custom_gcs_temp_location=temp_location)
-        )
+                                                          custom_gcs_temp_location=temp_location))
     )
 
     result = p.run()
@@ -115,8 +121,3 @@ def run(argv=None):
 if __name__ == '__main__':
     run()
 
-# python data_migration_test.py --project=cloudbuild-test-367215 \
-# --input=cloudbuild-test-367215:test_dataset.test-table \
-# --migrate_config=gs://bq-data-migration-store/migrate_config_v2.json \
-# --output=cloudbuild-test-367215:test_dataset.new-test-table \
-# --temp_location=gs://bq-data-migration-store/temp/ 
