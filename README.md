@@ -83,3 +83,4 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
   }
 ]
 ```
+Create a BigQuery table with the new schema JSON specification and store the update configuration JSON in a GCS bucket.
