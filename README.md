@@ -2,7 +2,9 @@
 A simple Apache Beam pipeline to migrate data from a BigQuery table to a new schema specified by a configuration JSON to be run on Google Cloud Dataflow.
 
 ## Requirements:
--
+- [Python](https://www.python.org/downloads/)
+- [Apache Beam](https://cloud.google.com/dataflow/docs/guides/installing-beam-sdk#python_1)
+- [GCSFS](https://gcsfs.readthedocs.io/en/latest/)
 
 ## Setting up Configuration Files
 Configurations are based on BigQuery schema structure and datatypes using JSON. [See official BigQuery documentation](https://cloud.google.com/bigquery/docs/schemas#specifying_a_json_schema_file)
