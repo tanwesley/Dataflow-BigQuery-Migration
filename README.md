@@ -86,9 +86,24 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
 Create a BigQuery table with the new schema JSON specification and store the update configuration JSON in a GCS bucket.
 
 ## Running Apache Beam job on Dataflow
-To submit a job, the following arguments are required to run:
-- **--input:** The source BigQuery table from which you wish to migrate data from. Format: PROJECT:DATASET.TABLE 
-- **--output:"** The new BigQuery table which you wish to output transformed data to. Format: PROJECT:DATASET.TABLE
-- **--migrate_config:** The GCS path to the migration config JSON file which applies data to new schema.
-- **--project:** The Google Cloud project in which you are working.
-- **--temp_location:** A path to a GCS bucket to temporarily store data which will be written to BigQuery. 
+To submit a job, open the repository in command line and configure the arguments which are required to run.
+
+```
+EXPORT PROJECT="The Google Cloud project ID where you are working from" \
+EXPORT INPUT="The BigQuery table from which you wish to migrate from. Format: {project_id}.{dataset_name}.{table_name}" \
+EXPORT OUTPUT="The BigQuery table where you wish to migrate data to. Format: {project_id}.{dataset_name}.{table_name}"  \
+EXPORT MIGRATE_CONFIG="The GCS path to the migration config JSON file which applies data to new schema."  \
+EXPORT TEMP_LOCATION="The path to a GCS location where data will be temporarily stored to write to BigQuery." \
+EXPORT REGION="Any available Google Cloud Platform service region of your choice"
+```
+
+Then run the Python file to submit a job to Dataflow.
+```
+python data_migration_test.py --project=PROJECT \
+--input=INPUT \
+--migrate_config=MIGRATE_CONFIG \
+--output=OUTPUT \
+--temp_location=TEMP_LOCATION \
+--runner=DataflowRunner \
+--region=REGION
+```
