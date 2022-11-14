@@ -112,3 +112,12 @@ python data_migration_test.py --project=PROJECT \
 --runner=DataflowRunner \
 --region=REGION
 ```
+
+## Working with sample data
+Some sample data and configurations are included in the /sample_data folder in this repository.
+To use them:
+- Create a BigQuery dataset to work with.
+- Create a table under the dataset you just created using the JSON schema specification in bqschema.json
+- Upload JSON data from test_dataset.json to the table you just created.
+- Create a new table under the same dataset using the JSON schema specification in new_bqschema.json
+- Create a Google Cloud Storage bucket and upload migrate_config_v2.json to it. Note the GCS path to this file.
