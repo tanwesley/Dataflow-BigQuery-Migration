@@ -12,4 +12,74 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
     - "delete" is for removing columns you do not wish to migrate.
 - "default_value": The value to be set for the column when adding a column, or modifying a column if a conversion between types is invalid.
 
-  
+### Example:
+#### Source BigQuery table schema:
+'''
+[
+  {
+    "name": "first_name",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "last_name",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "phone_number",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+  }
+]
+'''
+
+#### Target BigQuery table schema:
+'''
+[
+  {
+    "name": "last_name",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "phone_number",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "address",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  }
+]
+'''
+
+#### Migration configuration:
+- Removes "first_name" field.
+- Changes "phone_number field from INTEGER to STRING
+- Adds "address" field.
+'''
+[
+  {
+    "name": "first_name",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "mutation_type": "delete"
+  },
+  {
+    "name": "phone_number",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "mutation_type": "modify",
+    "default_value": null
+  },
+  {
+    "name": "address",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "mutation_type": "add",
+    "default_value": null
+  }
+]
+'''
