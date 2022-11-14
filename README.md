@@ -14,7 +14,7 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
 
 ### Example:
 #### Source BigQuery table schema:
-'''
+```
 [
   {
     "name": "first_name",
@@ -32,10 +32,10 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
     "mode": "NULLABLE"
   }
 ]
-'''
+```
 
 #### Target BigQuery table schema:
-'''
+```
 [
   {
     "name": "last_name",
@@ -53,13 +53,13 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
     "mode": "NULLABLE"
   }
 ]
-'''
+```
 
 #### Migration configuration:
 - Removes "first_name" field.
 - Changes "phone_number field from INTEGER to STRING
 - Adds "address" field.
-'''
+```
 [
   {
     "name": "first_name",
@@ -82,4 +82,4 @@ To write an update configuration JSON, write a BigQuery JSON schema containing o
     "default_value": null
   }
 ]
-'''
+```
