@@ -1,36 +1,21 @@
 import argparse
 import apache_beam as beam 
-from apache_beam.io import ReadFromText
-from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions 
 import json
 import gcsfs
 
-BUCKET_NAME = 'bq-data-migration-store'
-PROJECT_NAME = 'cloudbuild-test-367215'
-OUTPUT_DATASET = 'test_dataset'
-OUTPUT_TABLE = 'new_test_table'
-
-GCS_FILE_SYSTEM = gcsfs.GCSFileSystem(project=PROJECT_NAME)
-# GCS_CONFIG_PATH = 'gs://bq-data-migration-store/bq-migrate-config.json'
-# GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config.json'
-# GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_2.json'
-GCS_CONFIG_PATH = 'gs://bq-data-migration-store/migrate_config_v2.json'
-
-update_config = json.load(GCS_FILE_SYSTEM.open(GCS_CONFIG_PATH))
-
-GCS_NEW_SCHEMA_PATH = 'gs://bq-data-migration-store/new_bqschema.json'
-# new_schema = json.load(GCS_FILE_SYSTEM.open(GCS_NEW_SCHEMA_PATH))
-
 class OldToNewSchema(beam.DoFn):
-    def __init__(self, config=update_config):
+    def __init__(self, config):
         self.config = config
 
-    def process(self, data, config=update_config):
+    def process(self, data, config=None):
         import logging
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
+
+        if config == None: 
+            config = self.config 
         
         for c in config: 
             name = c.get('name')
@@ -41,7 +26,7 @@ class OldToNewSchema(beam.DoFn):
                 nested_fields = data.get(name) 
 
                 for f in nested_fields: 
-                    data.update({ name: self.process(f, c.get('fields')) })
+                    data.update({ name: self.process(data=f, config=c.get('fields')) })
                     logger.info(f"UPDATED DATA: {data}")
 
             else:
@@ -87,25 +72,39 @@ def run(argv=None):
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--input',
+                        dest='input',
+                        required=True,
+                        help='Input data from BigQuery table to migrate. \nFormat: your_project_name:your_dataset.output_table')
+    parser.add_argument('--migrate_config',
+                        dest='migrate_config',
+                        required=True,
+                        help='JSON configuration for migrating data from old table to the new schema.')
     parser.add_argument('--output',
                         dest='output',
                         required=True,
-                        default=f'{PROJECT_NAME}:{OUTPUT_DATASET}.{OUTPUT_TABLE}',
-                        help='Output file to write results to.')
-
+                        help='BigQuery table to write results to. \nFormat: your_project_name:your_dataset.output_table')
 
     known_args, pipeline_args = parser.parse_known_args(argv)
     pipeline_options = PipelineOptions(pipeline_args)
     pipeline_options.view_as(SetupOptions).save_main_session = True
+    pipeline_options_dict = pipeline_options.get_all_options()
+
+    project_name = pipeline_options_dict.get('project')
+    temp_location = pipeline_options_dict.get('temp_location')
+    if temp_location == None: 
+        raise Exception('Missing required flag: --temp_location. --temp_location should be a path to a GCS location to write data to BigQuery.')
+
+    fs = gcsfs.GCSFileSystem(project=project_name)
+    update_config = json.load(fs.open(known_args.migrate_config))
 
     p = beam.Pipeline(options=pipeline_options)
 
     main = (p
-        | 'Read old table' >> (beam.io.ReadFromBigQuery(gcs_location='gs://bq-data-migration-store/test-table',
-                                                        table='cloudbuild-test-367215:test_dataset.test-table'))
-        | 'Convert to new schema' >> beam.ParDo(OldToNewSchema()) 
+        | 'Read old table' >> (beam.io.ReadFromBigQuery(table=known_args.input, gcs_location=temp_location))
+        | 'Convert to new schema' >> beam.ParDo(OldToNewSchema(update_config)) 
         | 'Write to BigQuery' >> (beam.io.WriteToBigQuery(table=known_args.output, 
-                                                          custom_gcs_temp_location='gs://bq-data-migration-store/temp')
+                                                          custom_gcs_temp_location=temp_location)
         )
     )
 
@@ -117,7 +116,7 @@ if __name__ == '__main__':
     run()
 
 # python data_migration_test.py --project=cloudbuild-test-367215 \
-# --output cloudbuild-test-367215:test_dataset.new_test_table \
-# --temp_location=gs://bq-data-migration-store/temp/ \
-# --project=cloudbuild-test-367215 \
-# --region=us-central1
+# --input=cloudbuild-test-367215:test_dataset.test-table \
+# --migrate_config=gs://bq-data-migration-store/migrate_config_v2.json \
+# --output=cloudbuild-test-367215:test_dataset.new-test-table \
+# --temp_location=gs://bq-data-migration-store/temp/ 
