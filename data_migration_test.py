@@ -107,7 +107,7 @@ def run(argv=None):
 
     p = beam.Pipeline(options=pipeline_options)
 
-    main = (p
+    (p
         | 'Read old table' >> (beam.io.ReadFromBigQuery(table=known_args.input, gcs_location=temp_location))
         | 'Convert to new schema' >> beam.ParDo(OldToNewSchema(update_config)) 
         | 'Write to BigQuery' >> (beam.io.WriteToBigQuery(table=known_args.output, 
